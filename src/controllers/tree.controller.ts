@@ -8,7 +8,11 @@ import { error } from "node:console";
 class TreeController{
     async getAllSpecies (req: Request, res: Response){
         try{
-            const species = await treeService.getAllSpecies();
+            const { search, category } = req.query;
+            const species = await treeService.getAllSpecies(
+                search as string | undefined,
+                category as string | undefined
+            );
             sendSuccess(res, 'Species retrieved successfully', species)
         } catch(error: any) {
             sendError(res, error.message)
@@ -81,6 +85,19 @@ class TreeController{
             return sendSuccess(res, `${result.count} species berhasil ditambahkan`, result, 201)
         } catch (error: any){
             sendError(res, error.message)
+        }
+    }
+
+    async getSpeciesByCategory(req: Request, res: Response){
+        try{
+            const { category } = req.params;
+            if (!category) {
+                return sendError(res, 'Category is required', 400);
+            }
+            const species = await treeService.getSpeciesByCategory(category);
+            sendSuccess(res, 'Species by category retrieved successfully', species);
+        } catch(error: any) {
+            sendError(res, error.message, 404);
         }
     }
 

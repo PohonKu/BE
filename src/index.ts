@@ -22,8 +22,6 @@ const app = express();
 app.use(middlewareApp);
 
 app.use("/api/v1/trees", treeRoutes);
-app.use("/api/v1/tree", treeRoutes);
-
 
 
 

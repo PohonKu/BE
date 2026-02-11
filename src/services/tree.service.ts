@@ -16,9 +16,9 @@ interface CreateTreeSpeciesDTO {
 
 class TreeService {
 
-    //ambil species tree
-    async getAllSpecies(){
-        return treeRepository.getAllSpecies();
+    //ambil species tree dengan search name dan filter category
+    async getAllSpecies(searchName?: string, category?: string){
+        return treeRepository.getAllSpecies(searchName, category);
     }
 
     //ambil species dengan id nya
@@ -73,10 +73,14 @@ class TreeService {
         return species;
     }
 
-
-
-
-
+    //ambil species berdasarkan category
+    async getSpeciesByCategory(category: string){
+        const species = await treeRepository.getSpeciesByCategory(category);
+        if(!species || species.length === 0){
+            throw new Error('No species found for this category');
+        }
+        return species;
+    }
 
 }
 

@@ -17,9 +17,25 @@ interface CreateTreeSpeciesDTO {
 class TreeRepository {
 
     //------------------------------------Tree Species----------------------------------------------//
-    // AMBIL SEMUA DATA SPECIES TREE (page order)
-    async getAllSpecies(): Promise<TreeSpecies[]> {
+    // AMBIL SEMUA DATA SPECIES TREE (page order) dengan filter search dan category
+    async getAllSpecies(searchName?: string, category?: string): Promise<TreeSpecies[]> {
+        const where: any = {};
+        
+        // Filter berdasarkan name jika ada search parameter
+        if (searchName) {
+            where.name = {
+                contains: searchName,
+                mode: 'insensitive'
+            };
+        }
+        
+        // Filter berdasarkan category jika ada category parameter
+        if (category) {
+            where.category = category;
+        }
+        
         return prisma.treeSpecies.findMany({
+            where,
             orderBy: {
                 name: 'asc'
             },
@@ -74,7 +90,19 @@ class TreeRepository {
             skipDuplicates: true  // skip kalau name sudah ada
         });
     }
-    
+
+    // AMBIL DATA SPECIES TREE BERDASARKAN CATEGORY
+    async getSpeciesByCategory(category: string): Promise<TreeSpecies[]> {
+        return prisma.treeSpecies.findMany({
+            where: { category },
+            orderBy: {
+                name: 'asc'
+            },
+            include: {
+                trees: true
+            }
+        });
+    }
 
 
 
