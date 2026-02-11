@@ -1,19 +1,17 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  //url      = env("DATABASE_URL")
 }
 
 // ============ MODELS ============
 
 model User {
-  id              Int      @id @default(autoincrement())
+  id              String   @id @default(cuid())
   email           String   @unique
   fullName        String   @map("full_name")
   passwordHash    String?  @map("password_hash")
@@ -31,7 +29,7 @@ model User {
 }
 
 model TreeSpecies {
-  id                   Int      @id @default(autoincrement())
+  id                   String   @id @default(cuid())
   name                 String   @unique
   latinName            String   @map("latin_name")
   storyContent         String   @db.Text // Rich text dari dosen
@@ -40,6 +38,9 @@ model TreeSpecies {
   carbonAbsorptionRate Float    @map("carbon_absorption_rate") // kg/year
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
+  description          String   @default("") @db.Text
+  availabelStok        Int      @default(0) @map("available_stock")   
+  category             String   @default("umum") @map("category")
 
   // Relations
   trees Tree[]
@@ -48,8 +49,8 @@ model TreeSpecies {
 }
 
 model Tree {
-  id           Int      @id @default(autoincrement())
-  speciesId    Int      @map("species_id")
+  id           String   @id @default(cuid())
+  speciesId    String      @map("species_id")
   serialNumber String   @unique @map("serial_number")
   latitude     Decimal  @db.Decimal(9, 6)
   longitude    Decimal  @db.Decimal(9, 6)
@@ -68,8 +69,8 @@ model Tree {
 }
 
 model Order {
-  id            Int      @id @default(autoincrement())
-  userId        Int      @map("user_id")
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
   orderNumber   String   @unique @map("order_number")
   totalAmount   Decimal  @map("total_amount") @db.Decimal(10, 2)
   paymentStatus String   @default("PENDING") @map("payment_status") // PENDING, PAID, FAILED
@@ -87,9 +88,9 @@ model Order {
 }
 
 model OrderItem {
-  id              Int     @id @default(autoincrement())
-  orderId         Int     @map("order_id")
-  treeId          Int     @map("tree_id")
+  id              String  @id @default(cuid())
+  orderId         String     @map("order_id")
+  treeId          String     @map("tree_id")
   priceAtPurchase Decimal @map("price_at_purchase") @db.Decimal(10, 2)
 
   // Relations
@@ -100,10 +101,10 @@ model OrderItem {
 }
 
 model Adoption {
-  id             Int      @id @default(autoincrement())
-  userId         Int      @map("user_id")
-  treeId         Int      @map("tree_id")
-  orderId        Int      @map("order_id")
+  id             String      @id @default(cuid())
+  userId         String      @map("user_id")
+  treeId         String      @map("tree_id")
+  orderId        String      @map("order_id")
   nameOnTag      String   @map("name_on_tag")
   certificateUrl String?  @map("certificate_url")
   adoptedAt      DateTime @default(now()) @map("adopted_at")
@@ -119,8 +120,8 @@ model Adoption {
 }
 
 model TreeUpdate {
-  id               Int      @id @default(autoincrement())
-  treeId           Int      @map("tree_id")
+  id               String      @id @default(cuid())
+  treeId           String      @map("tree_id")
   photoUrl         String   @map("photo_url")
   heightCm         Float    @map("height_cm")
   diameterCm       Float    @map("diameter_cm")
