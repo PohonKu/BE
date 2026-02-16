@@ -1,6 +1,7 @@
 import { userRepository } from "../repository/user.repository";
 import { hashPassword, comparePassword } from "../utils/password.util";
 import { generateToken, generateRefreshToken, verifyRefreshToken, verifyToken } from "../utils/jwt.util";
+import { User } from "@prisma/client";
 
 
 class AuthServices {
@@ -20,18 +21,16 @@ class AuthServices {
             fullName: data.fullName,
             passwordHash, 
             phone : data.phone,
+            authProvider: 'LOCAL',
         })
 
-        const accestToken = generateToken({
-            userId: user.id
-        })
+        const tokens = this.generateTokens(user);
 
-        const refresToken = generateRefreshToken({
-            userId : user.id
-        })
-
-        return {user, accestToken, refresToken};
-    }
+        return {
+            user: this.sanitizeUser(user),
+            ...tokens,
+            };
+        }
 
     async login (email: string, password: string){
         const user = await userRepository.findByEmail(email);
@@ -46,16 +45,71 @@ class AuthServices {
             throw new Error('Invalid Password, please try again!')
         }
 
-        const accestToken = generateToken({
-            userId: user.id
-        });
+        const tokens = this.generateTokens(user);
 
-        const refresToken = generateRefreshToken({
+        return {
+        user: this.sanitizeUser(user),
+        ...tokens,
+        };
+    }
+
+    async googleLogin(user: User){
+        const token = this.generateTokens(user);
+
+        return {
+            user: this.sanitizeUser(user),
+            ...token
+        }
+    }
+
+    async findProfile(googleId: string){
+        const profile = await userRepository.findByGoogleId(googleId)
+        return profile;
+    }
+
+    async refreshAccesToken(refreshToken: string){
+        const {verifyRefreshToken} = await import('../utils/jwt.util');
+
+        try{
+            const decode = verifyRefreshToken(refreshToken)
+            const user = await userRepository.findById(decode.userId);
+
+            if(!user){
+                throw new Error('user tidak ditemukan')
+            }
+
+            const accestToken = generateToken({
+                userId: user.id,
+                email: user.email,
+                role: user.role,
+            })
+
+            return {accestToken}
+        } catch(error){
+            throw new Error('refres token tidak valid')
+        }
+    }
+
+    private generateTokens(user: User){
+        const accessToken = generateToken({
+            userId: user.id,
+            email: user.email,
+            role: user.role
+        })
+
+        const refreshToken = generateRefreshToken({
             userId: user.id
         })
 
-        return {user, accestToken, refresToken}
+        return {accessToken, refreshToken}
     }
+
+    private sanitizeUser(user: User){
+        const {passwordHash, googleId, ...sanitizeUser} = user as any;
+        return sanitizeUser;
+    }
+
+
 
     
 }

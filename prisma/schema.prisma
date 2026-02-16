@@ -21,6 +21,11 @@ model User {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
+  //google oauth
+  googleId        String?  @unique @map("google_id")
+  avatarUrl       String?  @map("avatar_url")
+  authProvider    String?  @default("LOCAL") @map("auth_provider")
+
   // Relations
   orders    Order[]
   adoptions Adoption[]

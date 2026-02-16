@@ -4,14 +4,9 @@ import dotenv from 'dotenv';
 import prisma from './prisma/prisma';
 import middlewareApp from './middleware/middleware';
 import treeRoutes from './routes/tree.routes';
-//import testApp from './testDb/test';
-//import userApp from './controllers/user.controller';
-//import adoptionApp from './controllers/adoption.controller';
-//import orderItemApp from './controllers/orderItem.controller';
-//import orderApp from './controllers/order.controller';
-//import treeApp from './controllers/tree.controller';
-//import treeSpeciesApp from './controllers/treeSpecies.controler';
-//import treeUpdateApp from './controllers/treeUpdate.controller';
+import authRoutes from "./routes/auth.routes"
+import './config/oauth';        // ← INI YANG SERING LUPA!
+import passport from 'passport';
 
 dotenv.config();
 
@@ -22,6 +17,9 @@ const app = express();
 app.use(middlewareApp);
 
 app.use("/api/v1/trees", treeRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/', authRoutes);
+
 
 
 
@@ -30,6 +28,7 @@ app.use("/api/v1/trees", treeRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`🔗 Google OAuth: http://localhost:${PORT}/api/v1/auth/google`);
 });
 
 export default app;
