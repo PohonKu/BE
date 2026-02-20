@@ -44,11 +44,16 @@ model TreeSpecies {
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
   description          String   @default("") @db.Text
-  availabelStok        Int      @default(0) @map("available_stock")   
+  availabelStok        Int      @default(0) @map("available_stock")  
+  reservedStok         Int      @default(0) @map("reserved_stock") 
   category             String   @default("umum") @map("category")
 
   // Relations
   trees Tree[]
+  orderItems OrderItem[]
+  adoptions  Adoption[]
+  
+  
 
   @@map("tree_species")
 }
@@ -57,17 +62,16 @@ model Tree {
   id           String   @id @default(cuid())
   speciesId    String      @map("species_id")
   serialNumber String   @unique @map("serial_number")
-  latitude     Decimal  @db.Decimal(9, 6)
-  longitude    Decimal  @db.Decimal(9, 6)
-  status       String   @default("AVAILABLE") // AVAILABLE, BOOKED, SOLD
-  plantedAt    DateTime @map("planted_at")
+  latitude     Decimal?  @db.Decimal(9, 6)
+  longitude    Decimal?  @db.Decimal(9, 6)
+  status       String   @default("SOLD") // AVAILABLE, BOOKED, SOLD
+  plantedAt    DateTime? @map("planted_at")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
   species     TreeSpecies  @relation(fields: [speciesId], references: [id])
-  adoptions   Adoption[]
-  orderItems  OrderItem[]
+  adoptions   Adoption?
   treeUpdates TreeUpdate[]
 
   @@map("trees")
@@ -81,26 +85,28 @@ model Order {
   paymentStatus String   @default("PENDING") @map("payment_status") // PENDING, PAID, FAILED
   paymentMethod String?  @map("payment_method") // QRIS, BANK_TRANSFER, etc
   snapToken     String?  @map("snap_token")
+  expiredAt     DateTime? @map("expired_at")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relations
   user       User        @relation(fields: [userId], references: [id])
-  orderItems OrderItem[]
-  adoptions  Adoption[]
+  orderItems OrderItem?
+  adoptions  Adoption?
 
   @@map("orders")
 }
 
 model OrderItem {
   id              String  @id @default(cuid())
-  orderId         String     @map("order_id")
-  treeId          String     @map("tree_id")
+  orderId         String  @unique @map("order_id") // ✅ unique
+  speciesId       String  @map("species_id")       // ✅ ganti dari treeId
+  nameOnTag       String  @map("name_on_tag")
   priceAtPurchase Decimal @map("price_at_purchase") @db.Decimal(10, 2)
 
   // Relations
   order Order @relation(fields: [orderId], references: [id])
-  tree  Tree  @relation(fields: [treeId], references: [id])
+  species TreeSpecies @relation(fields: [speciesId], references: [id])
 
   @@map("order_items")
 }
@@ -108,8 +114,9 @@ model OrderItem {
 model Adoption {
   id             String      @id @default(cuid())
   userId         String      @map("user_id")
-  treeId         String      @map("tree_id")
-  orderId        String      @map("order_id")
+  treeId         String      @unique @map("tree_id")
+  orderId        String      @unique @map("order_id")
+  speciesId      String   @map("species_id")
   nameOnTag      String   @map("name_on_tag")
   certificateUrl String?  @map("certificate_url")
   adoptedAt      DateTime @default(now()) @map("adopted_at")
@@ -120,6 +127,7 @@ model Adoption {
   user  User  @relation(fields: [userId], references: [id])
   tree  Tree  @relation(fields: [treeId], references: [id])
   order Order @relation(fields: [orderId], references: [id])
+  species TreeSpecies @relation(fields: [speciesId], references: [id])
 
   @@map("adoptions")
 }

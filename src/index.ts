@@ -7,6 +7,7 @@ import treeRoutes from './routes/tree.routes';
 import authRoutes from "./routes/auth.routes"
 import './config/oauth';        // ← INI YANG SERING LUPA!
 import passport from 'passport';
+import orderRoutes from "./routes/order.routes";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(middlewareApp);
 app.use("/api/v1/trees", treeRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/', authRoutes);
+app.use('/api/v1/orders', orderRoutes);
 
 
 

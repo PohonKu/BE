@@ -1,10 +1,12 @@
 import prisma from '../prisma/prisma';
 
 class AdoptionRepository {
+    // UNTUK MEMBUAT ADOPSI BARU
     async create(data:{
         userId: string;
         treeId: string;
         orderId: string;
+        speciesId: string;
         nameOnTag: string;
         certificateUrl?: string | null;
         adoptionDate: Date;
@@ -18,6 +20,7 @@ class AdoptionRepository {
         });        
     }
 
+    // UNTUK MELIHAT DETAIL ADOPSI(POHON APA SAJA YANG UDAH DIADOPSI)
     async findById(id: string)  {
         return prisma.adoption.findUnique({
             where: { id },
@@ -35,6 +38,8 @@ class AdoptionRepository {
         });
     }
 
+
+    // UNTUK DASHBOARD USER(MELIHAT ADOPSI USER TERTENTU)
     async getUserAdoptions(userId: string){
         return prisma.adoption.findMany({
             where: {userId},
@@ -53,7 +58,13 @@ class AdoptionRepository {
         })
     }
 
-
+    //UNTUK MENGUPDATE URL SERTIFIKAT ADOPSI
+    async updateCertificateUrl(id: string, certificateUrl: string){
+        return prisma.adoption.update({
+            where: {id},
+            data: {certificateUrl}
+        });
+    }
 }
 
 export const adoptionRepository = new AdoptionRepository();

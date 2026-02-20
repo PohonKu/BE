@@ -11,6 +11,7 @@ docker run -d \
 ## cek schema
 npx prisma migrate dev --name init
 
+
 npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > init.sql
 
 npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script > update.sql
@@ -20,3 +21,20 @@ npx prisma generate
 npx prisma push 
 
 npx prisma migrate dev --name add_description_stock_category
+
+## update schema 
+1. migrate
+```
+npx prisma migrate dev --name add_tree_update_relation
+```
+
+2. generate
+```
+npx prisma generate
+```
+
+## prisma
+```
+npm install midtrans-client
+npm install --save-dev @types/midtrans-client
+```
