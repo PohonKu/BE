@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec ts-node src/index.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "npx prisma migrate deploy && node dist/index.js",
+    "postinstall": "prisma generate",
     "prisma:studio": "npx prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
     "migrate": "prisma migrate deploy"
