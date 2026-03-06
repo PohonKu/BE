@@ -107,6 +107,8 @@ class AuthController {
     sendSuccess(res, 'Logout berhasil');
   }
 
+  
+
   // ==================== GET CURRENT USER ====================
   
   async getMe(req: Request, res: Response) {

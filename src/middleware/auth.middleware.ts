@@ -29,6 +29,7 @@ export const authenticate = (
         console.log('❌ No user:', message);
         return sendError(res, message, 401);
       }
+      
 
       req.user = user;
       next();
