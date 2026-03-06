@@ -12,7 +12,7 @@ import orderRoutes from "./routes/order.routes";
 
 dotenv.config();
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 2000;
 const app = express();
 
 // ============ MIDDLEWARE ============

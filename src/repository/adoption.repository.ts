@@ -41,23 +41,7 @@ class AdoptionRepository {
 
 
     // UNTUK DASHBOARD USER(MELIHAT ADOPSI USER TERTENTU)
-    async getUserAdoptions(userId: string){
-        return prisma.adoption.findMany({
-            where: {userId},
-            include: {
-                tree:{
-                    include:{
-                        species: true,
-                        treeUpdates: { orderBy: { createdAt: 'desc' }, take: 1 },
-                    }
 
-                }
-            },
-            orderBy: {
-                adoptedAt: 'desc'
-            }
-        })
-    }
 
     //UNTUK MENGUPDATE URL SERTIFIKAT ADOPSI
     async updateCertificateUrl(id: string, certificateUrl: string){
@@ -203,6 +187,7 @@ class AdoptionRepository {
         };
 
     }
+
 }
 
 export const adoptionRepository = new AdoptionRepository();

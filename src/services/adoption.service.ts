@@ -4,6 +4,15 @@
 
 import { adoptionRepository } from '../repository/adoption.repository';
 import { orderRepository } from '../repository/order.repository';
+import {
+  getGrowthPhase,
+  getHealthStatus,
+  calculateExpectedHeight,
+  getMonthsSinceAdoption,
+  getDaysSinceAdoption,
+  predictNextUpdate,
+} from '../utils/tree.util';
+
 
 class AdoptionService {
   async createAdoptions(
@@ -123,7 +132,210 @@ class AdoptionService {
 
   async getDashboardStats(userId: string) {
     const stats = await adoptionRepository.getStatistic(userId);
+
     return stats;
+  }
+
+  async getDashboardBaru(userId: string){
+    const adoptions = await adoptionRepository.findByUserId(userId);
+
+    if (adoptions.length === 0) {
+      return {
+        totalCO2Absorbed: 0,
+        totalTrees: 0,
+        growthPhaseDistribution: {
+          seedling: 0,
+          sapling: 0,
+          pole: 0,
+          tree: 0,
+        },
+        healthStatusDistribution: {
+          healthy: 0,
+          adapting: 0,
+          critical: 0,
+        },
+        averageHeight: 0,
+        nextUpdateEstimate: null,
+        averageRemainingDays: 0,
+      };
+    }
+
+    let totalCO2 = 0;
+    const phaseCount = { seedling: 0, sapling: 0, pole: 0, tree: 0 };
+    const healthCount = { healthy: 0, adapting: 0, critical: 0 };
+    let totalHeight = 0;
+    const allUpdateDates: Date[] = [];
+    let totalRemainingDays = 0;
+
+
+    adoptions.forEach((adoption) => {
+      const tree = adoption.tree;
+      if (!tree) return;
+
+      const latestUpdate = tree.treeUpdates[0]; 
+
+      if (latestUpdate){
+        //total co2
+        totalCO2 += latestUpdate.co2AbsorbedTotal;
+        const phase = getGrowthPhase(latestUpdate.heightCm);
+
+        // 2. Growth Phase
+        if (phase === 'SEEDLING') phaseCount.seedling++;
+        else if (phase === 'SAPLING') phaseCount.sapling++;
+        else if (phase === 'POLE') phaseCount.pole++;
+        else phaseCount.tree++;
+
+        // 3. Health Status
+        const monthsOld = getMonthsSinceAdoption(adoption.adoptedAt);
+        const expectedHeight = calculateExpectedHeight(
+          adoption.species.carbonAbsorptionRate,
+          monthsOld
+        );
+        const healthStatus = getHealthStatus(
+          latestUpdate.heightCm,
+          expectedHeight
+        );
+
+        if (healthStatus === 'HEALTHY') healthCount.healthy++;
+        else if (healthStatus === 'ADAPTING') healthCount.adapting++;
+        else healthCount.critical++;
+
+        // 4. Average Height
+        totalHeight += latestUpdate.heightCm;
+
+        // 5. Collect update dates for prediction
+        allUpdateDates.push(new Date(latestUpdate.createdAt));
+
+        // 6. Remaining adoption days (assuming 5 years adoption period)
+        const adoptionEndDate = new Date(adoption.adoptedAt);
+        adoptionEndDate.setFullYear(adoptionEndDate.getFullYear() + 5);
+        const remainingDays = Math.max(
+          0,
+          Math.floor(
+            (adoptionEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+          )
+        );
+        totalRemainingDays += remainingDays;
+      }
+    })
+
+    const totalTrees = adoptions.length;
+
+    // Sort update dates untuk prediksi
+    allUpdateDates.sort((a, b) => a.getTime() - b.getTime());
+    const nextUpdate = predictNextUpdate(allUpdateDates);
+
+    return {
+      totalCO2Absorbed: Math.round(totalCO2 * 100) / 100,
+      totalTrees,
+      
+      // Pie Chart Data - Growth Phase
+      growthPhaseDistribution: {
+        seedling: phaseCount.seedling,
+        sapling: phaseCount.sapling,
+        pole: phaseCount.pole,
+        tree: phaseCount.tree,
+      },
+
+      // Pie Chart Data - Health Status
+      healthStatusDistribution: {
+        healthy: healthCount.healthy,
+        adapting: healthCount.adapting,
+        critical: healthCount.critical,
+      },
+
+      averageHeight: Math.round((totalHeight / totalTrees) * 100) / 100,
+      
+      nextUpdateEstimate: nextUpdate ? nextUpdate.toISOString() : null,
+      
+      averageRemainingDays: Math.floor(totalRemainingDays / totalTrees),
+    };
+
+    
+  }
+
+  // GET USER ADOPTIONS (dengan detail stats per pohon)
+  async getUserAdoptionBaru(userId: string){
+
+    const adoptions = await adoptionRepository.findByUserId(userId);
+    return adoptions.map((adoption) => {
+      const tree = adoption.tree;
+      const latestUpdate = tree?.treeUpdates[0];
+
+      let growthPhase = null;
+      let healthStatus = null;
+      let expectedHeight = 0;
+      let growthPercentage = 0;
+
+      if (latestUpdate) {
+        growthPhase = getGrowthPhase(latestUpdate.heightCm);
+        
+        const monthsOld = getMonthsSinceAdoption(adoption.adoptedAt);
+        expectedHeight = calculateExpectedHeight(
+          adoption.species.carbonAbsorptionRate,
+          monthsOld
+        );
+        growthPercentage = Math.round(
+          (latestUpdate.heightCm / expectedHeight) * 100
+        );
+        healthStatus = getHealthStatus(latestUpdate.heightCm, expectedHeight);
+      }
+
+      // Calculate remaining days
+      const adoptionEndDate = new Date(adoption.adoptedAt);
+      adoptionEndDate.setFullYear(adoptionEndDate.getFullYear() + 5);
+      const remainingDays = Math.max(
+        0,
+        Math.floor(
+          (adoptionEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+        )
+      );
+
+      return {
+        adoptionId: adoption.id,
+        adoptedAt: adoption.adoptedAt,
+        nameOnTag: adoption.nameOnTag,
+        
+        species: {
+          id: adoption.species.id,
+          name: adoption.species.name,
+          latinName: adoption.species.latinName,
+          imageUrl: adoption.species.mainImageUrl,
+          carbonRate: adoption.species.carbonAbsorptionRate,
+          category: adoption.species.category,
+        },
+
+        tree: tree ? {
+          id: tree.id,
+          serialNumber: tree.serialNumber,
+          latitude: tree.latitude,
+          longitude: tree.longitude,
+          plantedAt: tree.plantedAt,
+          status: tree.status,
+          
+          latestUpdate: latestUpdate ? {
+            ...latestUpdate,
+            growthPhase,
+            healthStatus,
+            expectedHeight: Math.round(expectedHeight * 100) / 100,
+            growthPercentage,
+          } : null,
+        } : null,
+
+        statistics: {
+          daysAdopted: getDaysSinceAdoption(adoption.adoptedAt),
+          remainingDays,
+          co2Absorbed: latestUpdate?.co2AbsorbedTotal || 0,
+        },
+
+        order: {
+          orderNumber: adoption.order.orderNumber,
+          totalAmount: Number(adoption.order.totalAmount),
+          paymentStatus: adoption.order.paymentStatus,
+          purchasedAt: adoption.order.createdAt,
+        },
+      };
+    });
   }
 }
 

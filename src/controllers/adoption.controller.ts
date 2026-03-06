@@ -7,7 +7,7 @@ import { sendSuccess, sendError } from '../utils/response.util';
 class AdoptionController{
     async getUserAdoptions(req: Request, res: Response){
         try{
-            const userId = (req.params as any).id;
+            const userId = (req as any).user.id;
             const adoption = await adoptionService.getUserAdoptions(userId);
 
             sendSuccess(res, 'Adoptions retrieved successfully', adoption)
@@ -51,6 +51,28 @@ class AdoptionController{
         sendError(res, error.message, 404);
         }
     }
+
+    async getUserAdoptionBaru(req: Request, res: Response){
+        try{
+            const userId = (req.user as any).id;
+            const adoption = await adoptionService.getUserAdoptionBaru(userId)
+            sendSuccess(res, "sukses", adoption)
+        } catch (error: any){
+            sendError(res, error.message, 404)
+        }
+    }
+
+    async getDashboarBaru(req: Request, res: Response){
+        try{
+            const userId = (req.user as any).id;
+            const adoption = await adoptionService.getDashboardBaru(userId)
+            sendSuccess(res, "sukses", adoption)
+        } catch (error: any){
+            sendError(res, error.message, 404)
+        }
+    }
+
+
 }
 
 export const adoptionController = new AdoptionController();
