@@ -22,9 +22,9 @@ model User {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   //google oauth
-  googleId        String?  @unique @map("google_id")
-  avatarUrl       String?  @map("avatar_url")
-  authProvider    String?  @default("LOCAL") @map("auth_provider")
+  googleId     String? @unique @map("google_id")
+  avatarUrl    String? @map("avatar_url")
+  authProvider String? @default("LOCAL") @map("auth_provider")
 
   // Relations
   orders    Order[]
@@ -44,30 +44,28 @@ model TreeSpecies {
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
   description          String   @default("") @db.Text
-  availabelStok        Int      @default(0) @map("available_stock")  
-  reservedStok         Int      @default(0) @map("reserved_stock") 
+  availabelStok        Int      @default(0) @map("available_stock")
+  reservedStok         Int      @default(0) @map("reserved_stock")
   category             String   @default("umum") @map("category")
 
   // Relations
-  trees Tree[]
+  trees      Tree[]
   orderItems OrderItem[]
   adoptions  Adoption[]
-  
-  
 
   @@map("tree_species")
 }
 
 model Tree {
-  id           String   @id @default(cuid())
-  speciesId    String      @map("species_id")
-  serialNumber String   @unique @map("serial_number")
+  id           String    @id @default(cuid())
+  speciesId    String    @map("species_id")
+  serialNumber String    @unique @map("serial_number")
   latitude     Decimal?  @db.Decimal(9, 6)
   longitude    Decimal?  @db.Decimal(9, 6)
-  status       String   @default("SOLD") // AVAILABLE, BOOKED, SOLD
+  status       String    @default("SOLD") // AVAILABLE, BOOKED, SOLD
   plantedAt    DateTime? @map("planted_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   // Relations
   species     TreeSpecies  @relation(fields: [speciesId], references: [id])
@@ -78,19 +76,19 @@ model Tree {
 }
 
 model Order {
-  id            String   @id @default(cuid())
-  userId        String   @map("user_id")
-  orderNumber   String   @unique @map("order_number")
-  totalAmount   Decimal  @map("total_amount") @db.Decimal(10, 2)
-  paymentStatus String   @default("PENDING") @map("payment_status") // PENDING, PAID, FAILED
-  paymentMethod String?  @map("payment_method") // QRIS, BANK_TRANSFER, etc
-  snapToken     String?  @map("snap_token")
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  orderNumber   String    @unique @map("order_number")
+  totalAmount   Decimal   @map("total_amount") @db.Decimal(10, 2)
+  paymentStatus String    @default("PENDING") @map("payment_status") // PENDING, PAID, FAILED
+  paymentMethod String?   @map("payment_method") // QRIS, BANK_TRANSFER, etc
+  snapToken     String?   @map("snap_token")
   expiredAt     DateTime? @map("expired_at")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  user       User        @relation(fields: [userId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
   orderItems OrderItem?
   adoptions  Adoption?
 
@@ -100,41 +98,43 @@ model Order {
 model OrderItem {
   id              String  @id @default(cuid())
   orderId         String  @unique @map("order_id") // ✅ unique
-  speciesId       String  @map("species_id")       // ✅ ganti dari treeId
+  speciesId       String  @map("species_id") // ✅ ganti dari treeId
   nameOnTag       String  @map("name_on_tag")
+  durationYears   Int     @default(1) @map("duration_years")
   priceAtPurchase Decimal @map("price_at_purchase") @db.Decimal(10, 2)
 
   // Relations
-  order Order @relation(fields: [orderId], references: [id])
+  order   Order       @relation(fields: [orderId], references: [id])
   species TreeSpecies @relation(fields: [speciesId], references: [id])
 
   @@map("order_items")
 }
 
 model Adoption {
-  id             String      @id @default(cuid())
-  userId         String      @map("user_id")
-  treeId         String      @unique @map("tree_id")
-  orderId        String      @unique @map("order_id")
-  speciesId      String   @map("species_id")
-  nameOnTag      String   @map("name_on_tag")
-  certificateUrl String?  @map("certificate_url")
-  adoptedAt      DateTime @default(now()) @map("adopted_at")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  treeId         String    @unique @map("tree_id")
+  orderId        String    @unique @map("order_id")
+  speciesId      String    @map("species_id")
+  nameOnTag      String    @map("name_on_tag")
+  certificateUrl String?   @map("certificate_url")
+  adoptedAt      DateTime  @default(now()) @map("adopted_at")
+  expiresAt      DateTime? @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  user  User  @relation(fields: [userId], references: [id])
-  tree  Tree  @relation(fields: [treeId], references: [id])
-  order Order @relation(fields: [orderId], references: [id])
+  user    User        @relation(fields: [userId], references: [id])
+  tree    Tree        @relation(fields: [treeId], references: [id])
+  order   Order       @relation(fields: [orderId], references: [id])
   species TreeSpecies @relation(fields: [speciesId], references: [id])
 
   @@map("adoptions")
 }
 
 model TreeUpdate {
-  id               String      @id @default(cuid())
-  treeId           String      @map("tree_id")
+  id               String   @id @default(cuid())
+  treeId           String   @map("tree_id")
   photoUrl         String   @map("photo_url")
   heightCm         Float    @map("height_cm")
   diameterCm       Float    @map("diameter_cm")

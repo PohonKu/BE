@@ -5,53 +5,53 @@ import { error } from "node:console";
 
 
 
-class TreeController{
-    async getAllSpecies (req: Request, res: Response){
-        try{
+class TreeController {
+    async getAllSpecies(req: Request, res: Response) {
+        try {
             const { search, category } = req.query;
             const species = await treeService.getAllSpecies(
                 search as string | undefined,
                 category as string | undefined
             );
             sendSuccess(res, 'Species retrieved successfully', species)
-        } catch(error: any) {
+        } catch (error: any) {
             sendError(res, error.message)
         }
     }
 
-    async getSpeciesById(req: Request, res: Response){
-        try{
-            const {id} = req.params;
+    async getSpeciesById(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
             const speciesById = await treeService.getSpeciesById(id);
             sendSuccess(res, 'Species retrieved successfully', speciesById);
-        } catch(error: any) {
+        } catch (error: any) {
             sendError(res, error.message, 404);
         }
     }
 
     async getAvailableTrees(req: Request, res: Response) {
         try {
-        const { speciesId } = req.query;
-        const trees = await treeService.getAvailableTree(speciesId as string);
-        sendSuccess(res, 'Trees retrieved successfully', trees);
+            const { speciesId } = req.query;
+            const trees = await treeService.getAvailableTree(speciesId as string);
+            sendSuccess(res, 'Trees retrieved successfully', trees);
         } catch (error: any) {
-        sendError(res, error.message);
+            sendError(res, error.message);
         }
     }
 
     async getTreeById(req: Request, res: Response) {
         try {
-        const { id } = req.params;
-        const tree = await treeService.getTreeById(id);
-        sendSuccess(res, 'Tree retrieved successfully', tree);
+            const { id } = req.params;
+            const tree = await treeService.getTreeById(id);
+            sendSuccess(res, 'Tree retrieved successfully', tree);
         } catch (error: any) {
-        sendError(res, error.message, 404);
+            sendError(res, error.message, 404);
         }
     }
 
 
-    async postSpecies(req: Request, res: Response){
-        try{
+    async postSpecies(req: Request, res: Response) {
+        try {
             const { name, latinName, storyContent, mainImageUrl, basePrice, carbonAbsorptionRate, description, availabelStok, category } = req.body;
             if (!name || !latinName || !storyContent || !mainImageUrl || !basePrice || !carbonAbsorptionRate || !description || !availabelStok || !category) {
                 return sendError(res, 'All fields are required', 400);
@@ -69,54 +69,88 @@ class TreeController{
 
             });
             sendSuccess(res, "Species succes to post", species, 201)
-        } catch (error: any){
+        } catch (error: any) {
             sendError(res, error.message)
         }
     }
 
-    async bulkCreateSpecies(req:Request, res: Response){
-        try{
+    async bulkCreateSpecies(req: Request, res: Response) {
+        try {
             const data = req.body;
             if (!Array.isArray(data) || data.length === 0) {
                 return sendError(res, 'Body harus berupa array dan tidak boleh kosong', 400);
             }
 
-            const result =  await treeService.bulkCreateSpecies(data);
+            const result = await treeService.bulkCreateSpecies(data);
             return sendSuccess(res, `${result.count} species berhasil ditambahkan`, result, 201)
-        } catch (error: any){
+        } catch (error: any) {
             sendError(res, error.message)
         }
     }
 
-    async getSpeciesByCategory(req: Request, res: Response){
-        try{
+    async getSpeciesByCategory(req: Request, res: Response) {
+        try {
             const { category } = req.params;
             if (!category) {
                 return sendError(res, 'Category is required', 400);
             }
             const species = await treeService.getSpeciesByCategory(category);
             sendSuccess(res, 'Species by category retrieved successfully', species);
-        } catch(error: any) {
+        } catch (error: any) {
             sendError(res, error.message, 404);
         }
     }
 
-    async createSpecies(req: Request, res: Response){
-        try{
+    async createSpecies(req: Request, res: Response) {
+        try {
             const { name, latinName, storyContent, mainImageUrl, basePrice, carbonAbsorptionRate } = req.body;
 
-            if(!name || !latinName || !storyContent || !mainImageUrl || !basePrice || !carbonAbsorptionRate){
+            if (!name || !latinName || !storyContent || !mainImageUrl || !basePrice || !carbonAbsorptionRate) {
                 return res.status(400).json({
                     success: false,
                     message: 'name, latinName, storyContent, mainImageUrl, basePrice, and carbonAbsorptionRate are required'
                 });
             }
 
-            
 
 
-        }catch (error: any){
+
+        } catch (error: any) {
             sendError(res, error.message)
+        }
+    }
+
+    async updateSpecies(req: Request, res: Response) {
+        try {
+            const requestingUser = req.user as any;
+            if (requestingUser.role !== 'ADMIN') {
+                return sendError(res, 'Forbidden: Admin access only', 403);
+            }
+
+            const { id } = req.params;
+            const {
+                name, latinName, storyContent, mainImageUrl,
+                basePrice, carbonAbsorptionRate, description,
+                availabelStok, category
+            } = req.body;
+
+            // Hanya masukkan field yang dikirim (partial update)
+            const updateData: Record<string, any> = {};
+            if (name !== undefined) updateData.name = name;
+            if (latinName !== undefined) updateData.latinName = latinName;
+            if (storyContent !== undefined) updateData.storyContent = storyContent;
+            if (mainImageUrl !== undefined) updateData.mainImageUrl = mainImageUrl;
+            if (basePrice !== undefined) updateData.basePrice = basePrice;
+            if (carbonAbsorptionRate !== undefined) updateData.carbonAbsorptionRate = carbonAbsorptionRate;
+            if (description !== undefined) updateData.description = description;
+            if (availabelStok !== undefined) updateData.availabelStok = availabelStok;
+            if (category !== undefined) updateData.category = category;
+
+            const updated = await treeService.updateSpecies(id, updateData);
+            sendSuccess(res, 'Species berhasil diupdate', updated);
+        } catch (error: any) {
+            const statusCode = error.message.includes('tidak ditemukan') ? 404 : 400;
+            sendError(res, error.message, statusCode);
         }
     }
 }

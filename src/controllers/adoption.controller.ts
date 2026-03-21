@@ -1,76 +1,112 @@
 import { Request, Response } from 'express';
 import { adoptionService } from '../services/adoption.service';
 //import { certificateService } from '../services/certificate.service';
+import { adoptionRepository } from '../repository/adoption.repository';
 import { sendSuccess, sendError } from '../utils/response.util';
 
 
-class AdoptionController{
-    async getUserAdoptions(req: Request, res: Response){
-        try{
+class AdoptionController {
+    async getUserAdoptions(req: Request, res: Response) {
+        try {
             const userId = (req as any).user.id;
             const adoption = await adoptionService.getUserAdoptions(userId);
 
             sendSuccess(res, 'Adoptions retrieved successfully', adoption)
-        } catch (error: any){
+        } catch (error: any) {
             sendError(res, error.message, 404);
         }
     }
 
     async getAdoptionDetail(req: Request, res: Response) {
         try {
-        const userId = (req.user as any).id;
-        const { id } = req.params;
+            const userId = (req.user as any).id;
+            const { id } = req.params;
 
-        const adoption = await adoptionService.getAdoptionDetail(id, userId);
-        
-        sendSuccess(res, 'Detail adoption berhasil diambil', adoption);
+            const adoption = await adoptionService.getAdoptionDetail(id, userId);
+
+            sendSuccess(res, 'Detail adoption berhasil diambil', adoption);
         } catch (error: any) {
-        const statusCode = error.message.includes('tidak memiliki akses') ? 403 : 404;
-        sendError(res, error.message, statusCode);
+            const statusCode = error.message.includes('tidak memiliki akses') ? 403 : 404;
+            sendError(res, error.message, statusCode);
         }
     }
 
     async getDashboardStats(req: Request, res: Response) {
         try {
-        const userId = (req.user as any).id;
-        
-        const stats = await adoptionService.getDashboardStats(userId);
-        
-        sendSuccess(res, 'Statistik berhasil diambil', stats);
+            const userId = (req.user as any).id;
+
+            const stats = await adoptionService.getDashboardStats(userId);
+
+            sendSuccess(res, 'Statistik berhasil diambil', stats);
         } catch (error: any) {
-        sendError(res, error.message);
+            sendError(res, error.message);
         }
     }
 
     async getAdoptionById(req: Request, res: Response) {
         try {
-        const { id } = req.params;
-        const adoption = await adoptionService.getAdoptionById(id);
-        sendSuccess(res, 'Adoption retrieved successfully', adoption);
+            const { id } = req.params;
+            const adoption = await adoptionService.getAdoptionById(id);
+            sendSuccess(res, 'Adoption retrieved successfully', adoption);
         } catch (error: any) {
-        sendError(res, error.message, 404);
+            sendError(res, error.message, 404);
         }
     }
 
-    async getUserAdoptionBaru(req: Request, res: Response){
-        try{
+    async getUserAdoptionBaru(req: Request, res: Response) {
+        try {
             const userId = (req.user as any).id;
             const adoption = await adoptionService.getUserAdoptionBaru(userId)
             sendSuccess(res, "sukses", adoption)
-        } catch (error: any){
+        } catch (error: any) {
             sendError(res, error.message, 404)
         }
     }
 
-    async getDashboarBaru(req: Request, res: Response){
-        try{
+    async getDashboarBaru(req: Request, res: Response) {
+        try {
             const userId = (req.user as any).id;
             const adoption = await adoptionService.getDashboardBaru(userId)
             sendSuccess(res, "sukses", adoption)
-        } catch (error: any){
+        } catch (error: any) {
             sendError(res, error.message, 404)
         }
     }
+
+    async getDashboard(req: Request, res: Response) {
+        try {
+            const userId = (req.user as any).id;
+            const adoption = await adoptionService.getDashboard(userId)
+            sendSuccess(res, "sukses", adoption)
+        } catch (error: any) {
+            sendError(res, error.message, 404)
+        }
+    }
+
+    async getAllAdoptionsAdmin(req: Request, res: Response) {
+        try {
+            const requestingUser = req.user as any;
+            if (requestingUser.role !== 'ADMIN') {
+                return sendError(res, 'Forbidden: Admin access only', 403);
+            }
+
+            const adoptions = await adoptionRepository.getAllAdoptionsAdmin();
+            sendSuccess(res, 'Semua data adopsi berhasil diambil', adoptions);
+        } catch (error: any) {
+            sendError(res, error.message);
+        }
+    }
+
+    async getAllAdoptionsWithUpdates(req: Request, res: Response) {
+        try {
+            const userId = (req.user as any).id;
+            const data = await adoptionService.getAllAdoptionsWithUpdates(userId);
+            sendSuccess(res, 'Riwayat update semua pohon berhasil diambil', data);
+        } catch (error: any) {
+            sendError(res, error.message);
+        }
+    }
+
 
 
 }

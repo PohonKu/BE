@@ -3,43 +3,55 @@ import { Prisma } from "@prisma/client";
 import { treeRepository } from "../repository/tree.repository";
 
 interface CreateTreeSpeciesDTO {
-  name: string;
-  latinName: string;
-  storyContent: string;
-  mainImageUrl: string;
-  basePrice: number;
-  carbonAbsorptionRate: number;
-  description: string;
-  availabelStock: number;
-  category: string;
+    name: string;
+    latinName: string;
+    storyContent: string;
+    mainImageUrl: string;
+    basePrice: number;
+    carbonAbsorptionRate: number;
+    description: string;
+    availabelStok: number;
+    category: string;
+}
+
+interface UpdateTreeSpeciesDTO {
+    name?: string;
+    latinName?: string;
+    storyContent?: string;
+    mainImageUrl?: string;
+    basePrice?: number;
+    carbonAbsorptionRate?: number;
+    description?: string;
+    availabelStok?: number;
+    category?: string;
 }
 
 class TreeService {
 
     //ambil species tree dengan search name dan filter category
-    async getAllSpecies(searchName?: string, category?: string){
+    async getAllSpecies(searchName?: string, category?: string) {
         return treeRepository.getAllSpecies(searchName, category);
     }
 
     //ambil species dengan id nya
-    async getSpeciesById(id: string){
-        const species =  await treeRepository.getSpeciesById(id);
-        if(!species){
-            throw new Error ('species not found');
+    async getSpeciesById(id: string) {
+        const species = await treeRepository.getSpeciesById(id);
+        if (!species) {
+            throw new Error('species not found');
         }
         return species;
     }
 
     //cari available tree untuk ditampilkan
-    async getAvailableTree(speciesId?: string){
+    async getAvailableTree(speciesId?: string) {
         const available = treeRepository.getAvailableTrees(speciesId);
         return available;
     }
 
     //cari berdasarkan id
-    async getTreeById (id: string){
+    async getTreeById(id: string) {
         const tree = await treeRepository.getTreeById(id);
-        if(!tree) throw new Error('Tree by id not found');
+        if (!tree) throw new Error('Tree by id not found');
         return tree;
     }
 
@@ -48,7 +60,7 @@ class TreeService {
         if (!tree) throw new Error('Tree not found');
 
         return treeRepository.createTreeUpdate({
-            
+
             ...data,
         });
 
@@ -58,7 +70,7 @@ class TreeService {
         return treeRepository.bulkCreateSpecies(data);
     }
 
-    async postSpecies(data:{
+    async postSpecies(data: {
         name: string;
         latinName: string;
         storyContent: string;
@@ -68,18 +80,25 @@ class TreeService {
         description: string;
         availabelStok: number;
         category: string;
-    }){
+    }) {
         const species = await treeRepository.postSpecies(data);
         return species;
     }
 
     //ambil species berdasarkan category
-    async getSpeciesByCategory(category: string){
+    async getSpeciesByCategory(category: string) {
         const species = await treeRepository.getSpeciesByCategory(category);
-        if(!species || species.length === 0){
+        if (!species || species.length === 0) {
             throw new Error('No species found for this category');
         }
         return species;
+    }
+
+    async updateSpecies(id: string, data: UpdateTreeSpeciesDTO) {
+        if (Object.keys(data).length === 0) {
+            throw new Error('Tidak ada field yang diupdate');
+        }
+        return treeRepository.updateSpecies(id, data);
     }
 
 }

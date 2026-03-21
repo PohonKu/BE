@@ -17,6 +17,7 @@ export const authenticate = (
       console.log('  - err:', err);
       console.log('  - user:', user ? user.email : 'null');
       console.log('  - info:', info);
+      console.log('rrole: ', user.role)
 
       if (err) {
         console.error('❌ Auth error:', err);
@@ -29,7 +30,7 @@ export const authenticate = (
         console.log('❌ No user:', message);
         return sendError(res, message, 401);
       }
-      
+
 
       req.user = user;
       next();

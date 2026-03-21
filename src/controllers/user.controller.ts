@@ -3,9 +3,9 @@ import { userRepository } from '../repository/user.repository';
 import { sendSuccess, sendError } from '../utils/response.util';
 import { error } from 'node:console';
 
-class UserController{
-    async getProfile(req: Request, res: Response){
-        try{
+class UserController {
+    async getProfile(req: Request, res: Response) {
+        try {
             const userId = (req.user as any).id;
             const user = await userRepository.findById(userId);
 
@@ -13,25 +13,39 @@ class UserController{
                 return sendError(res, 'User not found', 404);
             }
 
-            const {passwordHash, ...userWithoutPassword} = user;
+            const { passwordHash, ...userWithoutPassword } = user;
             sendSuccess(res, 'Profile retrieved successfully', userWithoutPassword);
-        } catch(error: any){
+        } catch (error: any) {
             sendError(res, error.message);
         }
     }
 
-    async updateProfile(req: Request, res: Response){
-        try{
+    async updateProfile(req: Request, res: Response) {
+        try {
             const userId = (req.user as any).id;
-            const {fullName, phone} = req.body;
-            const updateUser = await userRepository.update(userId,{
+            const { fullName, phone } = req.body;
+            const updateUser = await userRepository.update(userId, {
                 fullName,
                 phone
-            } );
+            });
 
             const { passwordHash, ...userWithoutPassword } = updateUser;
             sendSuccess(res, 'Profile updated successfully', userWithoutPassword);
-        } catch (error: any){
+        } catch (error: any) {
+            sendError(res, error.message);
+        }
+    }
+
+    async getAllBuyers(req: Request, res: Response) {
+        try {
+            const requestingUser = req.user as any;
+            if (requestingUser.role !== 'ADMIN') {
+                return sendError(res, 'Forbidden: Admin access only', 403);
+            }
+
+            const users = await userRepository.findAllUsers();
+            sendSuccess(res, 'Daftar pembeli berhasil diambil', users);
+        } catch (error: any) {
             sendError(res, error.message);
         }
     }

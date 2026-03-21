@@ -1,7 +1,7 @@
 import prisma from "../prisma/prisma";
 
-class OrderRepository{
-    async create(data:{
+class OrderRepository {
+    async create(data: {
         userId: string;
         orderNumber: string;
         totalAmount: number;
@@ -9,22 +9,22 @@ class OrderRepository{
         speciesId: string;
         nameOnTag: string;
         priceAtPurchase: number;
-    }){
-         const order = await prisma.order.create({
+    }) {
+        const order = await prisma.order.create({
             data: {  // ← Perhatikan: bungkus dengan "data"
-            userId: data.userId,
-            orderNumber: data.orderNumber,
-            totalAmount: data.totalAmount,
-            expiredAt: data.expiredAt,
-            paymentStatus: "PENDING",
-            
-            orderItems: {  // ← Gunakan "orderItems" (jamak, sesuai schema)
-                create: {
-                speciesId: data.speciesId,
-                nameOnTag: data.nameOnTag,
-                priceAtPurchase: data.priceAtPurchase,
+                userId: data.userId,
+                orderNumber: data.orderNumber,
+                totalAmount: data.totalAmount,
+                expiredAt: data.expiredAt,
+                paymentStatus: "PENDING",
+
+                orderItems: {  // ← Gunakan "orderItems" (jamak, sesuai schema)
+                    create: {
+                        speciesId: data.speciesId,
+                        nameOnTag: data.nameOnTag,
+                        priceAtPurchase: data.priceAtPurchase,
+                    }
                 }
-            }
             }
         });
 
@@ -32,72 +32,79 @@ class OrderRepository{
         const orderWithRelations = await prisma.order.findUnique({
             where: { id: order.id },
             include: {
-            orderItems: {
-                include: { species: true }
-            },
-            user: {
-                select: {
-                id: true,
-                fullName: true,
-                email: true,
-                phone: true,
+                orderItems: {
+                    include: { species: true }
+                },
+                user: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                        phone: true,
+                    }
                 }
             }
-        }
-  });
+        });
 
-  return orderWithRelations;
+        return orderWithRelations;
     }
 
     async findById(id: string) {
         return prisma.order.findUnique({
-        where: { id },
-        include: {
-            orderItems: {
-            include: { species: true }
-            },
-            user: {
-            select: {
-                id: true,
-                fullName: true,
-                email: true,
-                phone: true,
+            where: { id },
+            include: {
+                orderItems: {
+                    include: { species: true }
+                },
+                user: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                        phone: true,
+                    }
+                },
+                adoptions: true,
             }
-            },
-            adoptions: true,
-        }
         });
     }
 
     async findByOrderNumber(orderNumber: string) {
         return prisma.order.findUnique({
-        where: { orderNumber },
-        include: {
-            orderItems: {
-            include: { species: true }
-            },
-            user: {
-            select: {
-                id: true,
-                fullName: true,
-                email: true,
-                phone: true,
+            where: { orderNumber },
+            include: {
+                orderItems: {
+                    include: { species: true }
+                },
+                user: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                        phone: true,
+                    }
+                }
             }
-            }
-        }
+        });
+    }
+
+    async findDurationYear(orderId: string) {
+        return prisma.orderItem.findUnique({
+            where: { id: orderId },
+            select: { durationYears: true }
         });
     }
 
     async findByUserId(userId: string) {
         return prisma.order.findMany({
-        where: { userId },
-        include: {
-            orderItems: {
-            include: { species: true }
+            where: { userId },
+            include: {
+                orderItems: {
+                    include: { species: true }
+                },
+                adoptions: true,
             },
-            adoptions: true,
-        },
-        orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' }
         });
     }
 
@@ -107,18 +114,48 @@ class OrderRepository{
         paymentMethod?: string
     ) {
         return prisma.order.update({
-        where: { id },
-        data: {
-            paymentStatus,
-            ...(paymentMethod && { paymentMethod })
-        }
+            where: { id },
+            data: {
+                paymentStatus,
+                ...(paymentMethod && { paymentMethod })
+            }
         });
     }
 
     async saveSnapToken(id: string, snapToken: string) {
         return prisma.order.update({
-        where: { id },
-        data: { snapToken }
+            where: { id },
+            data: { snapToken }
+        });
+    }
+
+    async getAllOrdersAdmin() {
+        return prisma.order.findMany({
+            where: { paymentStatus: 'PAID' },
+            include: {
+                orderItems: {
+                    include: {
+                        species: {
+                            select: {
+                                id: true,
+                                name: true,
+                                latinName: true,
+                                mainImageUrl: true,
+                            }
+                        }
+                    }
+                },
+                user: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                        phone: true,
+                        avatarUrl: true,
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
         });
     }
 }

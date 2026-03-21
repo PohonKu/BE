@@ -2,10 +2,11 @@ import { snap } from '../config/midtrans';
 import prisma from '../config/database';
 import { orderRepository } from '../repository/order.repository';
 import { generateSerialNumber } from '../utils/order.util';
+import { calculateExpiresAt, DurationYears } from '../utils/adoptionPrize.utils';
 
 
 class PaymentService {
-    async createPayment(orderId: string, userId: string) {
+  async createPayment(orderId: string, userId: string) {
     const order = await orderRepository.findById(orderId);
 
     if (!order) throw new Error('Order tidak ditemukan');
@@ -101,6 +102,9 @@ class PaymentService {
       paymentStatus = 'FAILED';
     }
 
+    const adoptedAt = new Date()
+    const expires = calculateExpiresAt(adoptedAt, item.durationYears as DurationYears)
+
     // Proses dalam transaction
     await prisma.$transaction(async (tx) => {
 
@@ -152,6 +156,7 @@ class PaymentService {
             speciesId: item.speciesId,
             treeId: newTree.id,      // ← pohon yang baru dibuat
             nameOnTag: item.nameOnTag,
+            expiresAt: expires
           }
         });
 
@@ -169,7 +174,7 @@ class PaymentService {
           where: { id: item.speciesId },
           data: {
             availabelStok: { increment: 1 },
-            reservedStok:  { decrement: 1 },
+            reservedStok: { decrement: 1 },
           }
         });
 

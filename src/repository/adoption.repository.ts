@@ -1,9 +1,10 @@
 import { tr } from 'zod/v4/locales';
 import prisma from '../prisma/prisma';
 
+
 class AdoptionRepository {
     // UNTUK MEMBUAT ADOPSI BARU
-    async create(data:{
+    async create(data: {
         userId: string;
         treeId: string;
         orderId: string;
@@ -11,29 +12,32 @@ class AdoptionRepository {
         nameOnTag: string;
         certificateUrl?: string | null;
         adoptionDate: Date;
-    })  {
-        return prisma.adoption.create({ 
+        expiresAt: Date;
+    }) {
+        return prisma.adoption.create({
             data,
             include: {
                 user: true,
-                tree: {include: {species: true }},
+                tree: { include: { species: true } },
             }
-        });        
+        });
     }
 
     // UNTUK MELIHAT DETAIL ADOPSI(POHON APA SAJA YANG UDAH DIADOPSI)
-    async findById(id: string)  {
+    async findById(id: string) {
         return prisma.adoption.findUnique({
             where: { id },
             include: {
-                tree: {include: {
-                    species: true,
-                    treeUpdates : {
-                        orderBy: {
-                            createdAt: 'desc'
+                tree: {
+                    include: {
+                        species: true,
+                        treeUpdates: {
+                            orderBy: {
+                                createdAt: 'desc'
+                            }
                         }
                     }
-                }},
+                },
                 user: true,
             }
         });
@@ -44,81 +48,193 @@ class AdoptionRepository {
 
 
     //UNTUK MENGUPDATE URL SERTIFIKAT ADOPSI
-    async updateCertificateUrl(id: string, certificateUrl: string){
+    async updateCertificateUrl(id: string, certificateUrl: string) {
         return prisma.adoption.update({
-            where: {id},
-            data: {certificateUrl}
+            where: { id },
+            data: { certificateUrl }
         });
     }
 
     //untuk dashboard
     async findByUserId(userId: string) {
-    return prisma.adoption.findMany({
-      where: { userId },
-      include: {
-        // Data species
-        species: {
-          select: {
-            id: true,
-            name: true,
-            latinName: true,
-            mainImageUrl: true,
-            carbonAbsorptionRate: true,
-            category: true,
-          }
-        },
-        // Data pohon fisik
-        tree: {
-          select: {
-            id: true,
-            serialNumber: true,
-            latitude: true,
-            longitude: true,
-            plantedAt: true,
-            status: true,
-            createdAt: true,
-            // Update terbaru (ambil 1 saja)
-            treeUpdates: {
-              orderBy: { createdAt: 'desc' },
-              take: 1,
-              select: {
-                id: true,
-                photoUrl: true,
-                heightCm: true,
-                diameterCm: true,
-                co2AbsorbedTotal: true,
-                adminNotes: true,
-                createdAt: true,
-              }
-            }
-          }
-        },
-        // Data order
-        order: {
-          select: {
-            id: true,
-            orderNumber: true,
-            totalAmount: true,
-            paymentStatus: true,
-            createdAt: true,
-          }
-        }
-      },
-      orderBy: { adoptedAt: 'desc' } // terbaru dulu
+        return prisma.adoption.findMany({
+            where: { userId },
+            include: {
+                // Data species
+                species: {
+                    select: {
+                        id: true,
+                        name: true,
+                        latinName: true,
+                        mainImageUrl: true,
+                        carbonAbsorptionRate: true,
+                        category: true,
+                    }
+                },
+                // Data pohon fisik
+                tree: {
+                    select: {
+                        id: true,
+                        serialNumber: true,
+                        latitude: true,
+                        longitude: true,
+                        plantedAt: true,
+                        status: true,
+                        createdAt: true,
+                        // Update terbaru (ambil 1 saja)
+                        treeUpdates: {
+                            orderBy: { createdAt: 'desc' },
+                            take: 1,
+                            select: {
+                                id: true,
+                                photoUrl: true,
+                                heightCm: true,
+                                diameterCm: true,
+                                co2AbsorbedTotal: true,
+                                adminNotes: true,
+                                createdAt: true,
+                            }
+                        }
+                    }
+                },
+                // Data order
+                order: {
+                    select: {
+                        id: true,
+                        orderNumber: true,
+                        totalAmount: true,
+                        paymentStatus: true,
+                        createdAt: true,
+                    }
+                }
+            },
+            orderBy: { adoptedAt: 'desc' } // terbaru dulu
+        });
+    }
+
+    async findActiveAdoptionsByUserId(userId: string) {
+        return prisma.adoption.findMany({
+            where: { userId, expiresAt: { gt: new Date() } },
+            include: {
+                // Data species
+                species: {
+                    select: {
+                        id: true,
+                        name: true,
+                        latinName: true,
+                        mainImageUrl: true,
+                        carbonAbsorptionRate: true,
+                        category: true,
+                    }
+                },
+                // Data pohon fisik
+                tree: {
+                    select: {
+                        id: true,
+                        serialNumber: true,
+                        latitude: true,
+                        longitude: true,
+                        plantedAt: true,
+                        status: true,
+                        createdAt: true,
+                        // Update terbaru (ambil 1 saja)
+                        treeUpdates: {
+                            orderBy: { createdAt: 'desc' },
+                            take: 1,
+                            select: {
+                                id: true,
+                                photoUrl: true,
+                                heightCm: true,
+                                diameterCm: true,
+                                co2AbsorbedTotal: true,
+                                adminNotes: true,
+                                createdAt: true,
+                            }
+                        }
+                    }
+                },
+                // Data order
+                order: {
+                    select: {
+                        id: true,
+                        orderNumber: true,
+                        totalAmount: true,
+                        paymentStatus: true,
+                        createdAt: true,
+                    }
+                }
+            },
+            orderBy: { expiresAt: 'desc' } // terbaru dulu
+        });
+    }
+
+    async findExpiredAdoptionsByUserId(userId: string) {
+        return prisma.adoption.findMany({
+            where: { userId, expiresAt: { lte: new Date() } },
+            include: {
+                // Data species
+                species: {
+                    select: {
+                        id: true,
+                        name: true,
+                        latinName: true,
+                        mainImageUrl: true,
+                        carbonAbsorptionRate: true,
+                        category: true,
+                    }
+                },
+                // Data pohon fisik
+                tree: {
+                    select: {
+                        id: true,
+                        serialNumber: true,
+                        latitude: true,
+                        longitude: true,
+                        plantedAt: true,
+                        status: true,
+                        createdAt: true,
+                        // Update terbaru (ambil 1 saja)
+                        treeUpdates: {
+                            orderBy: { createdAt: 'desc' },
+                            take: 1,
+                            select: {
+                                id: true,
+                                photoUrl: true,
+                                heightCm: true,
+                                diameterCm: true,
+                                co2AbsorbedTotal: true,
+                                adminNotes: true,
+                                createdAt: true,
+                            }
+                        }
+                    }
+                },
+                // Data order
+                order: {
+                    select: {
+                        id: true,
+                        orderNumber: true,
+                        totalAmount: true,
+                        paymentStatus: true,
+                        createdAt: true,
+                    }
+                }
+            },
+            orderBy: { expiresAt: 'desc' } // terbaru dulu
         });
     }
 
 
-    async detailAdoption(adoptionId: string){
+    async detailAdoption(adoptionId: string) {
         return prisma.adoption.findUnique({
-            where: {id: adoptionId},
+            where: { id: adoptionId },
             include: {
                 species: true,
                 tree: {
-                    include:{
-                        treeUpdates:{
-                            orderBy: {createdAt: 'desc'},
-                            select:{
+                    include: {
+                        treeUpdates: {
+                            orderBy: { createdAt: 'desc' },
+                            select: {
                                 id: true,
                                 photoUrl: true,
                                 heightCm: true,
@@ -131,8 +247,8 @@ class AdoptionRepository {
                     }
                 },
                 order: true,
-                user:{
-                    select:{
+                user: {
+                    select: {
                         id: true,
                         fullName: true,
                         email: true
@@ -148,12 +264,12 @@ class AdoptionRepository {
             include: {
                 species: true,
                 tree: {
-                include: {
-                    treeUpdates: {
-                    orderBy: { createdAt: 'desc' },
-                    take: 1,
+                    include: {
+                        treeUpdates: {
+                            orderBy: { createdAt: 'desc' },
+                            take: 1,
+                        }
                     }
-                }
                 }
             }
         });
@@ -174,9 +290,9 @@ class AdoptionRepository {
 
         // Pohon tertinggi
         const tallestTree = adoptions.reduce((max, adoption) => {
-        const latestUpdate = adoption.tree?.treeUpdates[0];
-        const height = latestUpdate?.heightCm || 0;
-        return height > max ? height : max;
+            const latestUpdate = adoption.tree?.treeUpdates[0];
+            const height = latestUpdate?.heightCm || 0;
+            return height > max ? height : max;
         }, 0);
 
         return {
@@ -188,6 +304,108 @@ class AdoptionRepository {
 
     }
 
-}
+    async getAllAdoptionsAdmin() {
+        return prisma.adoption.findMany({
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                        avatarUrl: true,
+                        phone: true,
+                    }
+                },
+                species: {
+                    select: {
+                        id: true,
+                        name: true,
+                        latinName: true,
+                        mainImageUrl: true,
+                    }
+                },
+                tree: {
+                    select: {
+                        id: true,
+                        serialNumber: true,
+                        latitude: true,
+                        longitude: true,
+                        status: true,
+                        plantedAt: true,
+                        treeUpdates: {
+                            orderBy: { createdAt: 'desc' },
+                            take: 1,
+                            select: {
+                                heightCm: true,
+                                co2AbsorbedTotal: true,
+                                createdAt: true,
+                            }
+                        }
+                    }
+                },
+                order: {
+                    select: {
+                        id: true,
+                        orderNumber: true,
+                        totalAmount: true,
+                        paymentStatus: true,
+                        createdAt: true,
+                    }
+                }
+            },
+            orderBy: { adoptedAt: 'desc' }
+        });
+    }
 
+    async findAllAdoptionsWithUpdates(userId: string) {
+        return prisma.adoption.findMany({
+            where: { userId },
+            include: {
+                species: {
+                    select: {
+                        id: true,
+                        name: true,
+                        latinName: true,
+                        mainImageUrl: true,
+                        category: true,
+                        carbonAbsorptionRate: true,
+                    }
+                },
+                tree: {
+                    select: {
+                        id: true,
+                        serialNumber: true,
+                        latitude: true,
+                        longitude: true,
+                        plantedAt: true,
+                        status: true,
+                        // Ambil SEMUA update, terbaru dulu
+                        treeUpdates: {
+                            orderBy: { createdAt: 'desc' },
+                            select: {
+                                id: true,
+                                photoUrl: true,
+                                heightCm: true,
+                                diameterCm: true,
+                                co2AbsorbedTotal: true,
+                                adminNotes: true,
+                                createdAt: true,
+                            }
+                        }
+                    }
+                },
+                order: {
+                    select: {
+                        orderNumber: true,
+                        totalAmount: true,
+                        paymentStatus: true,
+                        createdAt: true,
+                    }
+                }
+            },
+            orderBy: { adoptedAt: 'desc' }
+        });
+
+    }
+}
 export const adoptionRepository = new AdoptionRepository();

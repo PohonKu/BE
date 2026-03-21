@@ -1,16 +1,28 @@
 import prisma from '../prisma/prisma';
-import {Prisma, Tree, TreeSpecies} from '@prisma/client';
+import { Prisma, Tree, TreeSpecies } from '@prisma/client';
 
 interface CreateTreeSpeciesDTO {
-  name: string;
-  latinName: string;
-  storyContent: string;
-  mainImageUrl: string;
-  basePrice: number;
-  carbonAbsorptionRate: number;
-  description: string;
-  availabelStock: number;
-  category: string;
+    name: string;
+    latinName: string;
+    storyContent: string;
+    mainImageUrl: string;
+    basePrice: number;
+    carbonAbsorptionRate: number;
+    description: string;
+    availabelStok: number;
+    category: string;
+}
+
+interface UpdateTreeSpeciesDTO {
+    name?: string;
+    latinName?: string;
+    storyContent?: string;
+    mainImageUrl?: string;
+    basePrice?: number;
+    carbonAbsorptionRate?: number;
+    description?: string;
+    availabelStok?: number;
+    category?: string;
 }
 
 
@@ -20,7 +32,7 @@ class TreeRepository {
     // AMBIL SEMUA DATA SPECIES TREE (page order) dengan filter search dan category
     async getAllSpecies(searchName?: string, category?: string): Promise<TreeSpecies[]> {
         const where: any = {};
-        
+
         // Filter berdasarkan name jika ada search parameter
         if (searchName) {
             where.name = {
@@ -28,12 +40,12 @@ class TreeRepository {
                 mode: 'insensitive'
             };
         }
-        
+
         // Filter berdasarkan category jika ada category parameter
         if (category) {
             where.category = category;
         }
-        
+
         return prisma.treeSpecies.findMany({
             where,
             orderBy: {
@@ -57,7 +69,7 @@ class TreeRepository {
         return prisma.treeSpecies.create({ data });
     }
 
-    async postSpecies(data:{
+    async postSpecies(data: {
         name: string;
         latinName: string;
         storyContent: string;
@@ -67,7 +79,7 @@ class TreeRepository {
         description: string;
         availabelStok: number;
         category: string;
-    }){
+    }) {
         const species = await prisma.treeSpecies.create({
             data: {
                 name: data.name,
@@ -104,17 +116,26 @@ class TreeRepository {
         });
     }
 
+    async updateSpecies(id: string, data: UpdateTreeSpeciesDTO): Promise<TreeSpecies> {
+        const existing = await prisma.treeSpecies.findUnique({ where: { id } });
+        if (!existing) throw new Error('Species tidak ditemukan');
+
+        return prisma.treeSpecies.update({
+            where: { id },
+            data,
+        });
+    }
+
 
 
     //-------------------------------------Tree---------------------------------------------//
     //
-    async getAvailableTrees(speciesId?: string){
+    async getAvailableTrees(speciesId?: string) {
         return prisma.tree.findMany({
-            where:{
-                status: 'available',
+            where: {
                 ...(speciesId && { speciesId })
             },
-            include:{
+            include: {
                 species: true
             }
         });

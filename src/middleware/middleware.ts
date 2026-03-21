@@ -14,7 +14,7 @@ app.use(cors({
     //    : '*',
     credentials: true,
     origin: 'http://localhost:3000', // URL frontend
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
 
 export default app;

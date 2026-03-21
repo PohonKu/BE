@@ -9,6 +9,8 @@ const router = Router();
 // Harus sebelum /:id agar tidak konflik routing
 router.post('/webhook', orderController.handleWebhook);
 
+
+router.get('/admin/all', authenticate, orderController.getAllOrdersAdmin);
 // Protected routes - butuh login
 router.use(authenticate);
 router.post('/', orderController.createOrder);
@@ -16,5 +18,6 @@ router.get('/', orderController.getUserOrders);
 router.get('/:id', orderController.getOrderById);
 router.post('/:id/payment', orderController.createPayment);
 router.patch('/:id/cancel', orderController.cancelOrder);
+
 
 export default router;

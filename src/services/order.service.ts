@@ -2,15 +2,16 @@
 import prisma from '../config/database';
 import { orderRepository } from '../repository/order.repository';
 import { generateOrderNumber } from '../utils/order.util';
+import { calculatePrice, DurationYears } from '../utils/adoptionPrize.utils';
 
-class OrderService{
+class OrderService {
   // ========================
   // CREATE ORDER
   // User klik adopsi → kirim speciesId & nameOnTag
   // ========================
-   async createOrder(
+  async createOrder(
     userId: string,
-    data: { speciesId: string; nameOnTag: string }
+    data: { speciesId: string; nameOnTag: string, durationYears: DurationYears }
   ) {
     return await prisma.$transaction(async (tx) => {
 
@@ -19,6 +20,7 @@ class OrderService{
         where: { id: data.speciesId }
       });
       if (!species) throw new Error('Species tidak ditemukan');
+
 
       // 2. Cek stok
       if (species.availabelStok < 1) {
@@ -30,7 +32,7 @@ class OrderService{
         where: { id: data.speciesId },
         data: {
           availabelStok: { decrement: 1 },
-          reservedStok:  { increment: 1 },
+          reservedStok: { increment: 1 },
         }
       });
 
@@ -38,19 +40,23 @@ class OrderService{
       const expiredAt = new Date();
       expiredAt.setHours(expiredAt.getHours() + 24);
 
+      const basePrice = Number(species.basePrice)
+      const finalPrice = calculatePrice(basePrice, data.durationYears)
+
       // 5. Buat order + orderItem sekaligus
       const order = await tx.order.create({
         data: {
           userId,
           orderNumber: generateOrderNumber(),
-          totalAmount: species.basePrice,
+          totalAmount: finalPrice,
           expiredAt,
           paymentStatus: 'PENDING',
           orderItems: {
             create: {
               speciesId: data.speciesId,
               nameOnTag: data.nameOnTag,
-              priceAtPurchase: species.basePrice,
+              priceAtPurchase: finalPrice,
+              durationYears: data.durationYears,
             }
           }
         },
@@ -85,6 +91,7 @@ class OrderService{
         include: { orderItems: true }
       });
 
+
       if (!order) throw new Error('Order tidak ditemukan');
       if (order.userId !== userId) throw new Error('Akses ditolak');
       if (order.paymentStatus !== 'PENDING') {
@@ -97,7 +104,7 @@ class OrderService{
           where: { id: order.orderItems.speciesId },
           data: {
             availabelStok: { increment: 1 },
-            reservedStok:  { decrement: 1 },
+            reservedStok: { decrement: 1 },
           }
         });
       }

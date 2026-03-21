@@ -26,6 +26,10 @@ class AdoptionService {
       throw new Error('Order must be paid first');
     }
 
+
+
+
+
     const adoptions = await Promise.all(
       adoptionData.map((data) =>
         adoptionRepository.create({
@@ -34,7 +38,8 @@ class AdoptionService {
           orderId: order.id,
           speciesId: data.speciesId,
           nameOnTag: data.nameOnTag,
-          adoptionDate: new Date()
+          adoptionDate: new Date(),
+          expiresAt: new Date(new Date().setDate(new Date().getDate() + 30)),
         })
       )
     );
@@ -51,7 +56,7 @@ class AdoptionService {
       adoptionId: adoption.id,
       adoptedAt: adoption.adoptedAt,
       nameOnTag: adoption.nameOnTag,
-      
+
       // Info species
       species: {
         id: adoption.species.id,
@@ -71,7 +76,7 @@ class AdoptionService {
         plantedAt: adoption.tree.plantedAt,
         status: adoption.tree.status,
         createdAt: adoption.tree.createdAt,
-        
+
         // Update terbaru
         latestUpdate: adoption.tree.treeUpdates[0] || null,
       } : null,
@@ -124,9 +129,25 @@ class AdoptionService {
     };
   }
 
+  async getDashboard(userId: string) {
+    const [active, expired] = await Promise.all([
+      adoptionRepository.findActiveAdoptionsByUserId(userId),
+      adoptionRepository.findExpiredAdoptionsByUserId(userId),
+    ])
+
+    return {
+      active,
+      expired,
+      summary: {
+        totalActive: active.length,
+        totalExpired: expired.length,
+      }
+    }
+  }
+
   async getAdoptionById(id: string) {
     const adoption = await adoptionRepository.findById(id);
-    if (!adoption) throw new Error('Adoption not found');
+    if (!adoption) throw new Error('Adoption found');
     return adoption;
   }
 
@@ -136,7 +157,7 @@ class AdoptionService {
     return stats;
   }
 
-  async getDashboardBaru(userId: string){
+  async getDashboardBaru(userId: string) {
     const adoptions = await adoptionRepository.findByUserId(userId);
 
     if (adoptions.length === 0) {
@@ -172,9 +193,9 @@ class AdoptionService {
       const tree = adoption.tree;
       if (!tree) return;
 
-      const latestUpdate = tree.treeUpdates[0]; 
+      const latestUpdate = tree.treeUpdates[0];
 
-      if (latestUpdate){
+      if (latestUpdate) {
         //total co2
         totalCO2 += latestUpdate.co2AbsorbedTotal;
         const phase = getGrowthPhase(latestUpdate.heightCm);
@@ -228,7 +249,7 @@ class AdoptionService {
     return {
       totalCO2Absorbed: Math.round(totalCO2 * 100) / 100,
       totalTrees,
-      
+
       // Pie Chart Data - Growth Phase
       growthPhaseDistribution: {
         seedling: phaseCount.seedling,
@@ -245,17 +266,17 @@ class AdoptionService {
       },
 
       averageHeight: Math.round((totalHeight / totalTrees) * 100) / 100,
-      
+
       nextUpdateEstimate: nextUpdate ? nextUpdate.toISOString() : null,
-      
+
       averageRemainingDays: Math.floor(totalRemainingDays / totalTrees),
     };
 
-    
+
   }
 
   // GET USER ADOPTIONS (dengan detail stats per pohon)
-  async getUserAdoptionBaru(userId: string){
+  async getUserAdoptionBaru(userId: string) {
 
     const adoptions = await adoptionRepository.findByUserId(userId);
     return adoptions.map((adoption) => {
@@ -269,7 +290,7 @@ class AdoptionService {
 
       if (latestUpdate) {
         growthPhase = getGrowthPhase(latestUpdate.heightCm);
-        
+
         const monthsOld = getMonthsSinceAdoption(adoption.adoptedAt);
         expectedHeight = calculateExpectedHeight(
           adoption.species.carbonAbsorptionRate,
@@ -295,7 +316,7 @@ class AdoptionService {
         adoptionId: adoption.id,
         adoptedAt: adoption.adoptedAt,
         nameOnTag: adoption.nameOnTag,
-        
+
         species: {
           id: adoption.species.id,
           name: adoption.species.name,
@@ -312,7 +333,7 @@ class AdoptionService {
           longitude: tree.longitude,
           plantedAt: tree.plantedAt,
           status: tree.status,
-          
+
           latestUpdate: latestUpdate ? {
             ...latestUpdate,
             growthPhase,
@@ -336,6 +357,36 @@ class AdoptionService {
         },
       };
     });
+  }
+
+
+  async getAllAdoptionsWithUpdates(userId: string) {
+    const adoptions = await adoptionRepository.findAllAdoptionsWithUpdates(userId);
+
+    return adoptions.map((adoption) => ({
+      adoptionId: adoption.id,
+      nameOnTag: adoption.nameOnTag,
+      adoptedAt: adoption.adoptedAt,
+      expiresAt: adoption.expiresAt,
+
+      species: adoption.species,
+
+      tree: adoption.tree ? {
+        id: adoption.tree.id,
+        serialNumber: adoption.tree.serialNumber,
+        latitude: adoption.tree.latitude,
+        longitude: adoption.tree.longitude,
+        plantedAt: adoption.tree.plantedAt,
+        status: adoption.tree.status,
+
+        // Semua update (kosong [] kalau belum ada)
+        updates: adoption.tree.treeUpdates,
+        totalUpdates: adoption.tree.treeUpdates.length,
+        hasUpdates: adoption.tree.treeUpdates.length > 0,
+      } : null,
+
+      order: adoption.order,
+    }));
   }
 }
 
