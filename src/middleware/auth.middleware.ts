@@ -17,7 +17,7 @@ export const authenticate = (
       console.log('  - err:', err);
       console.log('  - user:', user ? user.email : 'null');
       console.log('  - info:', info);
-      console.log('rrole: ', user.role)
+      console.log('rrole: ', user?.role)
 
       if (err) {
         console.error('❌ Auth error:', err);

@@ -99,7 +99,7 @@ class TreeRepository {
     async bulkCreateSpecies(data: CreateTreeSpeciesDTO[]): Promise<{ count: number }> {
         return prisma.treeSpecies.createMany({
             data,
-            skipDuplicates: true  // skip kalau name sudah ada
+            skipDuplicates: true
         });
     }
 
