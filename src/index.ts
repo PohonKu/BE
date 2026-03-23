@@ -8,6 +8,7 @@ import treeUpdateAdminRoutes from './routes/treeUpdate.routes';
 import './config/oauth';
 import orderRoutes from "./routes/order.routes";
 import userRoutes from './routes/user.routes';
+import uploadRoutes from './routes/uploud.routes';
 
 dotenv.config();
 
@@ -25,7 +26,7 @@ app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/adoptions', adoptionRoutes);
 app.use('/api/v1/admin/trees/:treeId/updates', treeUpdateAdminRoutes);
 app.use('/api/v1/users', userRoutes);
-
+app.use('/api/v1/upload', uploadRoutes);
 
 // ============ START SERVER ============
 app.listen(PORT, () => {
