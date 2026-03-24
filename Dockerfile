@@ -18,7 +18,5 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 
-EXPOSE 2000
-
 # Start: otomatis migrate lalu jalankan server
 CMD ["npm", "run", "start"]
