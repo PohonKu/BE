@@ -15,6 +15,13 @@ dotenv.config();
 const PORT = process.env.PORT || 2000;
 const app = express();
 
+
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
+
+
 // ============ MIDDLEWARE ============
 app.use(middlewareApp);
 
@@ -27,6 +34,8 @@ app.use('/api/v1/adoptions', adoptionRoutes);
 app.use('/api/v1/admin/trees/:treeId/updates', treeUpdateAdminRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/upload', uploadRoutes);
+
+
 
 // ============ START SERVER ============
 app.listen(PORT, () => {
