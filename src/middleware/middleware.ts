@@ -13,7 +13,7 @@ app.use(cors({
     //    ? ['https://pohonku.app']
     //    : '*',
     credentials: true,
-    origin: 'http://localhost:3000', // URL frontend
+    origin: 'https://pohonku-testing.vercel.apps', // URL frontend
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
 
