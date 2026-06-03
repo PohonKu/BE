@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # Service untuk Database Postgres
+  db:
+    image: postgres:15-alpine
+    container_name: pohonku-fkt
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pohonku
+      POSTGRES_DB: pohonku_fkt
+    ports:
+      - "5434:5432" # Gunakan 5434 agar tidak bentrok dengan kontainer lama kamu (5433)
+    volumes:
+      - postgres_data_pohonku:/var/lib/postgresql/data
+
+  # Service untuk Backend Express (Dockerfile kamu)
+  backend:
+    build: .
+    container_name: pohonku-be
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      # PENTING: Gunakan nama service 'db' sebagai host, bukan localhost
+      DATABASE_URL: "postgresql://postgres:pohonku@localhost:5433/pohonku_fkt"
+      PORT: 8080
+
+volumes:
+  postgres_data_pohonku:
